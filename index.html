@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Hospedaje</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root {
+      --bg-body: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #0f172a;
+      --primary-hover: #1e293b;
+      --accent: #2563eb;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg-body); color: var(--text-main); padding: 30px 15px; }
+
+    .app-container { max-width: 1280px; margin: 0 auto; }
+
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 15px;
+    }
+    .header h1 { font-size: 1.4rem; font-weight: 700; color: var(--text-main); }
+    .header p { font-size: 0.85rem; color: var(--text-muted); }
+
+    .controls-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px; gap: 10px; flex-wrap: wrap;
+    }
+    .search-box { position: relative; flex: 1; max-width: 350px; }
+    .search-box input {
+      width: 100%; padding: 9px 12px 9px 36px; border-radius: var(--radius);
+      border: 1px solid var(--border-color); font-size: 0.85rem; outline: none;
+    }
+    .search-box i {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 0.85rem;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 16px; font-size: 0.85rem; font-weight: 500;
+      border-radius: var(--radius); border: none; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #e2e8f0; color: var(--text-main); }
+    .btn-secondary:hover { background: #cbd5e1; }
+
+    .card {
+      background: var(--card-bg); border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+    }
+    .table-container { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.825rem; white-space: nowrap; }
+    th {
+      background: #f8fafc; padding: 12px 16px; font-weight: 600;
+      color: var(--text-muted); border-bottom: 1px solid var(--border-color);
+    }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+    tr:hover td { background-color: #f8fafc; }
+
+    .badge {
+      display: inline-block; padding: 3px 8px; border-radius: 12px;
+      font-size: 0.725rem; font-weight: 600; text-transform: uppercase;
+    }
+    .badge-checkin { background: #dcfce7; color: #15803d; }
+    .badge-reservado { background: #e0f2fe; color: #0369a1; }
+    .badge-checkout { background: #f1f5f9; color: #475569; }
+    .badge-cancelado { background: #fee2e2; color: #b91c1c; }
+    .badge-pagado { background: #dcfce7; color: #15803d; }
+    .badge-adelanto { background: #fef3c7; color: #b45309; }
+    .badge-pendiente { background: #fee2e2; color: #b91c1c; }
+
+    .room-number {
+      font-weight: 700; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;
+    }
+
+    .action-btn {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 5px; border-radius: 4px; transition: 0.2s;
+    }
+    .action-btn:hover { color: var(--text-main); background: #e2e8f0; }
+    .action-btn.delete:hover { color: #ef4444; background: #fee2e2; }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(3px);
+      display: none; justify-content: center; align-items: center; z-index: 100; padding: 10px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card-bg); width: 100%; max-width: 680px;
+      padding: 24px; border-radius: var(--radius);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid var(--border-color);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .form-group.full { grid-column: span 2; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    .form-control {
+      width: 100%; padding: 8px 10px; font-size: 0.85rem;
+      border: 1px solid var(--border-color); border-radius: 6px; outline: none; transition: 0.2s;
+    }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+
+    .loader-container { padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  
+  <div class="header">
+    <div>
+      <h1><i class="fas fa-hotel"></i> Recepción Hospedaje</h1>
+      <p>Sistema en GitHub Pages conectado a Google Sheets</p>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Buscar por huésped, hab, doc o ID...">
+    </div>
+    <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Nuevo Check-In / Reserva</button>
+  </div>
+
+  <div class="card">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Habit.</th>
+            <th>Huésped</th>
+            <th>Doc Identidad</th>
+            <th>Contacto</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>Total</th>
+            <th>Estado Pago</th>
+            <th>Reserva</th>
+            <th style="text-align: right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="11" class="loader-container"><i class="fas fa-spinner fa-spin"></i> Cargando reservas...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Nuevo Registro de Hospedaje</div>
+    <form id="recordForm">
+      <input type="hidden" id="recordId">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo Documento</label>
+          <select id="tipoDoc" class="form-control">
+            <option value="DNI">DNI</option>
+            <option value="Pasaporte">Pasaporte</option>
+            <option value="C.E.">Carné Extranjería</option>
+            <option value="RUC">RUC</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>N° Documento</label>
+          <input type="text" id="nroDoc" class="form-control" placeholder="Ej: 72839102" required>
+        </div>
+
+        <div class="form-group full">
+          <label>Nombre Completo del Huésped</label>
+          <input type="text" id="huesped" class="form-control" placeholder="Ej: Juan Pérez Gómez" required>
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono / Celular</label>
+          <input type="tel" id="telefono" class="form-control" placeholder="Ej: 987654321">
+        </div>
+
+        <div class="form-group">
+          <label>N° Habitación</label>
+          <input type="text" id="numHab" class="form-control" placeholder="Ej: 102" required>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de Habitación</label>
+          <select id="tipoHab" class="form-control">
+            <option value="Simple">Simple</option>
+            <option value="Matrimonial">Matrimonial</option>
+            <option value="Doble">Doble</option>
+            <option value="Triple">Triple</option>
+            <option value="Suite">Suite</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Check-In</label>
+          <input type="date" id="checkIn" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Check-Out</label>
+          <input type="date" id="checkOut" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Monto Total (S/)</label>
+          <input type="number" step="0.01" id="montoTotal" class="form-control" placeholder="0.00" required>
+        </div>
+
+        <div class="form-group">
+          <label>Estado del Pago</label>
+          <select id="estadoPago" class="form-control">
+            <option value="Pagado">Pagado</option>
+            <option value="Adelanto">Adelanto / Cta</option>
+            <option value="Pendiente">Pendiente</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label>Estado de la Reserva</label>
+          <select id="estadoReserva" class="form-control">
+            <option value="Check-In">Check-In (En Hospedaje)</option>
+            <option value="Reservado">Reservado (Por Llegar)</option>
+            <option value="Check-Out">Check-Out (Finalizado)</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label>Observaciones</label>
+          <input type="text" id="observaciones" class="form-control" placeholder="Ej: Cama adicional...">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="handleSave()"><i class="fas fa-save"></i> Guardar Registro</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ⚠️ PEGA AQUÍ LA URL DE TU APLICACIÓN WEB DE GOOGLE APPS SCRIPT
+  const API_URL = "https://script.google.com/macros/s/AKfycbz1ml4PMY1sytFJDH9am5Ny2UjttJHW-N2cO2uykqay92mz5FT7rfTmg8jdIgE5RGzO/exec";
+
+  let localRecords = [];
+
+  window.onload = loadData;
+
+  // Cargar datos usando Fetch API
+  function loadData() {
+    fetch(`${API_URL}?action=getSystemData`)
+      .then(res => res.json())
+      .then(response => {
+        if(!response.success) return alert("Error: " + response.error);
+        localRecords = response.records;
+        renderTable(response.records);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Error de conexión con Google Sheets API.");
+      });
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('tableBody');
+    if (records.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color: var(--text-muted); padding:30px;">No hay registros actualmente.</td></tr>`;
+      return;
+    }
+
+    let html = '';
+    records.forEach((r, idx) => {
+      let badgeReserva = 'badge-checkout';
+      if (r[12] === 'Check-In') badgeReserva = 'badge-checkin';
+      if (r[12] === 'Reservado') badgeReserva = 'badge-reservado';
+      if (r[12] === 'Cancelado') badgeReserva = 'badge-cancelado';
+
+      let badgePago = 'badge-pendiente';
+      if (r[11] === 'Pagado') badgePago = 'badge-pagado';
+      if (r[11] === 'Adelanto') badgePago = 'badge-adelanto';
+
+      html += `
+        <tr>
+          <td><strong style="font-size:0.75rem;">${r[0]}</strong></td>
+          <td><span class="room-number">Hab ${r[6]}</span></td>
+          <td><strong>${r[4]}</strong><br><small style="color:var(--text-muted);">${r[7]}</small></td>
+          <td>${r[2]}: ${r[3]}</td>
+          <td>${r[5] || '-'}</td>
+          <td>${r[8]}</td>
+          <td>${r[9]}</td>
+          <td>S/ ${parseFloat(r[10] || 0).toFixed(2)}</td>
+          <td><span class="badge ${badgePago}">${r[11]}</span></td>
+          <td><span class="badge ${badgeReserva}">${r[12]}</span></td>
+          <td style="text-align: right;">
+            <button class="action-btn" onclick="editRecord(${idx})" title="Editar"><i class="fas fa-edit"></i></button>
+            <button class="action-btn delete" onclick="deleteItem('${r[0]}')" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  }
+
+  function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = localRecords.filter(r => 
+      r[0].toLowerCase().includes(q) ||
+      r[4].toLowerCase().includes(q) ||
+      r[6].toString().toLowerCase().includes(q) ||
+      r[3].toString().toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  function openModal() {
+    document.getElementById('recordForm').reset();
+    document.getElementById('recordId').value = '';
+    document.getElementById('checkIn').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modalTitle').innerText = 'Nuevo Check-In / Reserva';
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+  }
+
+  function editRecord(index) {
+    const row = localRecords[index];
+    document.getElementById('recordId').value = row[0];
+    document.getElementById('tipoDoc').value = row[2];
+    document.getElementById('nroDoc').value = row[3];
+    document.getElementById('huesped').value = row[4];
+    document.getElementById('telefono').value = row[5];
+    document.getElementById('numHab').value = row[6];
+    document.getElementById('tipoHab').value = row[7];
+    document.getElementById('checkIn').value = row[8];
+    document.getElementById('checkOut').value = row[9];
+    document.getElementById('montoTotal').value = row[10];
+    document.getElementById('estadoPago').value = row[11];
+    document.getElementById('estadoReserva').value = row[12];
+    document.getElementById('observaciones').value = row[13];
+    
+    document.getElementById('modalTitle').innerText = 'Editar Registro de Hospedaje';
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+
+  // Guardar (POST)
+  function handleSave() {
+    const payload = {
+      id: document.getElementById('recordId').value,
+      tipoDoc: document.getElementById('tipoDoc').value,
+      nroDoc: document.getElementById('nroDoc').value,
+      huesped: document.getElementById('huesped').value,
+      telefono: document.getElementById('telefono').value,
+      numHab: document.getElementById('numHab').value,
+      tipoHab: document.getElementById('tipoHab').value,
+      checkIn: document.getElementById('checkIn').value,
+      checkOut: document.getElementById('checkOut').value,
+      montoTotal: document.getElementById('montoTotal').value,
+      estadoPago: document.getElementById('estadoPago').value,
+      estadoReserva: document.getElementById('estadoReserva').value,
+      observaciones: document.getElementById('observaciones').value
+    };
+
+    if(!payload.huesped || !payload.nroDoc || !payload.numHab || !payload.checkIn || !payload.checkOut) {
+      return Swal.fire({ icon: 'warning', title: 'Campos Incompletos', text: 'Rellena los datos requeridos.', confirmButtonColor: '#0f172a' });
+    }
+
+    closeModal();
+    Swal.fire({ title: 'Guardando...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, showConfirmButton: false });
+
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save', payload: payload })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if(res.success) {
+        Swal.fire({ icon: 'success', title: 'Éxito', text: res.msg, timer: 1500, showConfirmButton: false });
+        loadData();
+      } else {
+        Swal.fire('Error', res.msg, 'error');
+      }
+    })
+    .catch(err => Swal.fire('Error', 'No se pudo guardar la información', 'error'));
+  }
+
+  // Eliminar (POST)
+  function deleteItem(id) {
+    Swal.fire({
+      title: '¿Eliminar registro?',
+      text: `Se borrará la reserva ${id}.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0f172a',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({ title: 'Eliminando...', didOpen: () => Swal.showLoading(), allowOutsideClick: false, showConfirmButton: false });
+
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'delete', id: id })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if(res.success) {
+            Swal.fire({ icon: 'success', title: 'Eliminado', text: res.msg, timer: 1500, showConfirmButton: false });
+            loadData();
+          } else {
+            Swal.fire('Error', res.msg, 'error');
+          }
+        })
+        .catch(err => Swal.fire('Error', 'No se pudo eliminar el registro', 'error'));
+      }
+    });
+  }
+</script>
+</body>
+</html>
